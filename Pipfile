@@ -6,12 +6,13 @@ name = "pypi"
 [packages]
 jupyter = "*"
 notebook = "*"
-mlflow = "*"
 scikit-learn = "*"
 pandas = "*"
 boto3 = "*"
 flask = "*"
 gunicorn = "*"
+mlflow = "*"
+evidently = "*"
 
 [dev-packages]
 requests = "*"
