@@ -43,10 +43,12 @@ def get_val(df):
 
     return df_val
 
+def write_datasets_to_output(df_train, df_val, train_dataset_output, val_dataset_output):
+    df_train.to_parquet(train_dataset_output)
+    df_val.to_parquet(val_dataset_output)
+
 @task
 def prepare_train(df_train, categorical, numerical, target):    
-    df_train.to_parquet('./data/online_course_engagement_train_data.parquet')
-
     train_dict = df_train[categorical + numerical].to_dict(orient='records')
 
     y_train = df_train[target].values
@@ -57,8 +59,6 @@ def prepare_train(df_train, categorical, numerical, target):
 
 @task
 def prepare_val(df_val, categorical, numerical, target):
-    df_val.to_parquet('./data/online_course_engagement_val_data.parquet')
-
     val_dict = df_val[categorical + numerical].to_dict(orient='records')
 
     y_val = df_val[target].values
@@ -92,13 +92,13 @@ def monitor_pipeline(target, numerical, categorical, df_train_mon, df_val_mon):
     return result
 
 @task
-def write_to_output(df_train_mon, df_val_mon, train_output, val_output):
+def write_monitoring_data_to_output(df_train_mon, df_val_mon, train_output, val_output):
     df_train_mon.to_parquet(train_output)
     df_val_mon.to_parquet(val_output)
 
 
 @flow(log_prints=True)
-def run_pipeline(file_path, train_output, val_output):
+def run_pipeline(file_path, train_dataset_output, val_dataset_output, train_output, val_output):
     print('setting up mlflow')
     mlflow_setup()
 
@@ -110,6 +110,9 @@ def run_pipeline(file_path, train_output, val_output):
 
     df_train = get_train(df)
     df_val = get_val(df)
+
+    print(f'writing splitted datasets to {train_dataset_output} and {val_dataset_output}')
+    write_datasets_to_output(df_train, df_val, train_dataset_output, val_dataset_output)
 
     df_train_mon = pd.DataFrame()
     df_val_mon = pd.DataFrame()
@@ -176,12 +179,14 @@ def run_pipeline(file_path, train_output, val_output):
         mlflow.log_metric("share_missing_values", share_missing_values)
 
         print(f'saving monitoring datasets to {train_output} and {val_output}')
-        write_to_output(df_train_mon, df_val_mon, train_output, val_output)
+        write_monitoring_data_to_output(df_train_mon, df_val_mon, train_output, val_output)
 
 
 if __name__ == "__main__":
     file_path = './data/online_course_engagement_data.parquet'
+    train_dataset_output = './data/online_course_engagement_train_data.parquet'
+    val_dataset_output = './data/online_course_engagement_val_data.parquet'
     train_output = './monitoring_data/online_course_engagement_train_data.parquet'
     val_output = './monitoring_data/online_course_engagement_val_data.parquet'
 
-    run_pipeline(file_path, train_output, val_output)
+    run_pipeline(file_path, train_dataset_output, val_dataset_output, train_output, val_output)
