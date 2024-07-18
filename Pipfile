@@ -13,6 +13,7 @@ flask = "*"
 gunicorn = "*"
 mlflow = "*"
 evidently = "*"
+prefect = "*"
 
 [dev-packages]
 requests = "*"
