@@ -70,10 +70,10 @@ def prepare_val(df_val, categorical, numerical, target):
 @task
 def monitor_pipeline(target, numerical, categorical, df_train_mon, df_val_mon):
     column_mapping = ColumnMapping(
-    target=target,
-    prediction='prediction',
-    numerical_features=numerical,
-    categorical_features=categorical
+        target=target,
+        prediction='prediction',
+        numerical_features=numerical,
+        categorical_features=categorical
     )
 
     report = Report(metrics=[
