@@ -1,6 +1,5 @@
 import os
-import datetime
-import time
+from datetime import datetime
 import psycopg
 
 import mlflow
@@ -8,13 +7,18 @@ import mlflow
 from flask import Flask, request, jsonify
 
 
-TRACKING_URI = "http://127.0.0.1:5000"
-EXPERIMENT = "online-course-engagement-prediction-experiment-1"
+#TRACKING_URI = os.getenv('TRACKING_URI', 'http://host.docker.internal:5000')
+TRACKING_URI = os.getenv('TRACKING_URI')
+EXPERIMENT = os.getenv('EXPERIMENT')
+RUN_ID = os.getenv('RUN_ID')
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
 
 mlflow.set_tracking_uri(TRACKING_URI)
 mlflow.set_experiment(EXPERIMENT)
-
-RUN_ID = os.getenv('RUN_ID', '813bae34a9f4439d866c64223ed8146f')
 
 logged_model = f'runs:/{RUN_ID}/model'
 #logged_model = f's3://<BUCKET_NAME>/1/{RUN_ID}/artifacts/model'
@@ -24,10 +28,14 @@ model = mlflow.pyfunc.load_model(logged_model)
 create_table_statement = """
 create table if not exists features(
 	timestamp timestamp,
+    user_id integer,
 	prediction integer,
-	num_drifted_columns integer,
-	share_missing_values float
-)
+    course_category varchar,
+    device_type integer,
+    time_spent_on_course float,
+	number_of_videos_watched integer,
+    number_of_quizzes_taken integer
+);
 """
 
 def predict(features):
@@ -35,20 +43,27 @@ def predict(features):
     return int(pred[0])
 
 def prep_db():
-	with psycopg.connect("host=localhost port=5432 user=postgres password=example", autocommit=True) as conn:
+	with psycopg.connect(f'host=${DB_HOST} port=${DB_PORT} user=${DB_USER} password=${DB_PASSWORD}', autocommit=True) as conn:
 		res = conn.execute("SELECT 1 FROM pg_database WHERE datname='course'")
 		if len(res.fetchall()) == 0:
-			conn.execute("create database test;")
-		with psycopg.connect("host=localhost port=5432 dbname=course user=postgres password=example") as conn:
+			conn.execute("create database course;")
+		with psycopg.connect(f'host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD}') as conn:
 			conn.execute(create_table_statement)
 
-
 def save_features(features, prediction):
-    with psycopg.connect("host=localhost port=5432 dbname=course user=postgres password=example", autocommit=True) as conn:
+    now = datetime.now()
+    user_id = features['UserId']
+    course_category = features['CourseCategory']
+    device_type = features['DeviceType']
+    time_spent_on_course = features['TimeSpentOnCourse']
+    number_of_videos_watched = features['NumberOfVideosWatched']
+    number_of_quizzes_taken = features['NumberOfQuizzesTaken']
+
+    with psycopg.connect(f'host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD}', autocommit=True) as conn:
           with conn.cursor() as curr:
                 curr.execute(
-                    "insert into features(timestamp, prediction_drift, num_drifted_columns, share_missing_values) values (%s, %s, %s, %s)",
-                    (datetime, prediction, num_drifted_columns, share_missing_values)
+                    "insert into features(timestamp, user_id, prediction, course_category, device_type, time_spent_on_course, number_of_videos_watched, number_of_quizzes_taken) values (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (now, user_id, prediction, course_category, device_type, time_spent_on_course, number_of_videos_watched, number_of_quizzes_taken)
                 )
 
 
@@ -65,9 +80,11 @@ def predict_endpoint():
         'model_version': RUN_ID
     }
     
+    prep_db()
+
+    save_features(features, pred)
 
     return jsonify(result)
-    #return result
 
 
 if __name__ == "__main__":

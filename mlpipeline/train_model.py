@@ -68,9 +68,9 @@ def prepare_val(df_val, categorical, numerical, target):
     return result
 
 @task
-def monitor_pipeline(target, numerical, categorical, df_train_mon, df_val_mon):
+def monitor_pipeline(numerical, categorical, df_train_mon, df_val_mon):
     column_mapping = ColumnMapping(
-        target=target,
+        target=None,
         prediction='prediction',
         numerical_features=numerical,
         categorical_features=categorical
@@ -156,18 +156,20 @@ def run_pipeline(file_path, train_dataset_output, val_dataset_output, train_outp
         mlflow.sklearn.log_model(pipeline, artifact_path="model")
 
         print('creating new dataframes for monitoring ')
+        df_val_mon['UserId'] = df_val['UserId']
         df_val_mon[categorical] = df_val[categorical]
         df_val_mon[numerical] = df_val[numerical]
-        df_val_mon[target] = df_val[target]
+        #df_val_mon[target] = df_val[target]
         df_val_mon['prediction'] = val_pred
 
+        df_train_mon['UserId'] = df_train['UserId']
         df_train_mon[categorical] = df_train[categorical]
         df_train_mon[numerical] = df_train[numerical]
-        df_train_mon[target] = df_train[target]
+        #df_train_mon[target] = df_train[target]
         df_train_mon['prediction'] = train_pred
 
         print('fetching monitoring metrics')
-        monitoring_metrics = monitor_pipeline(target, numerical, categorical, df_train_mon, df_val_mon)
+        monitoring_metrics = monitor_pipeline(numerical, categorical, df_train_mon, df_val_mon)
 
         prediction_drift = monitoring_metrics['metrics'][0]['result']['drift_score']
         num_drifted_columns = monitoring_metrics['metrics'][1]['result']['number_of_drifted_columns']

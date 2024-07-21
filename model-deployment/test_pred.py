@@ -1,12 +1,12 @@
 import requests
 
 features = {
-    "UserId": 4567,
+    "UserId": 5678,
     "CourseCategory": "Programming",
-    "DeviceType": 1,
-    "TimeSpentOnCourse": 15.738969,
-    "NumberOfVideosWatched": 7,
-    "NumberOfQuizzesTaken": 5
+    "DeviceType": 0,
+    "TimeSpentOnCourse": 40.238989,
+    "NumberOfVideosWatched": 8,
+    "NumberOfQuizzesTaken": 3
 }
 
 url = 'http://localhost:9696/predict'

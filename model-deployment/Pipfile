@@ -14,6 +14,11 @@ gunicorn = "*"
 mlflow = "*"
 evidently = "*"
 prefect = "*"
+psycopg = "*"
+psycopg-binary = "*"
+pyarrow = "*"
+waitress = "*"
+jinja2 = "*"
 
 [dev-packages]
 requests = "*"

@@ -1,0 +1,47 @@
+version: '3.8'
+
+volumes: 
+  grafana_data: {}
+
+networks:
+  front-tier:
+  back-tier:
+
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: <password>
+    ports:
+      - "5432:5432"
+    networks:
+      - back-tier
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - back-tier
+      - front-tier
+
+  web:
+    build: .
+    image: webapp:2.0.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "9696:9696"
+    environment:
+      RUN_ID: 18d5b4d1abab40229abf8e1e657d7e58
+      TRACKING_URI: http://host.docker.internal:5000
+      EXPERIMENT: online-course-engagement-prediction-experiment-1
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASSWORD: <password>
+      DB_PORT: 5432
+      DB_NAME: course
+    networks:
+      - back-tier

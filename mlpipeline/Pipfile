@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+jupyter = "*"
+notebook = "*"
+scikit-learn = "*"
+pandas = "*"
+boto3 = "*"
+flask = "*"
+gunicorn = "*"
+mlflow = "*"
+evidently = "*"
+prefect = "*"
+psycopg = "*"
+psycopg-binary = "*"
+pyarrow = "*"
+waitress = "*"
+
+[dev-packages]
+requests = "*"
+pytest = "*"
+
+[requires]
+python_version = "3.12"
