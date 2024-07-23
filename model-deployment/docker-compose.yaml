@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.7'
 
 volumes: 
   grafana_data: {}
@@ -27,15 +27,29 @@ services:
       - back-tier
       - front-tier
 
+  grafana:
+    image: grafana/grafana
+    user: "472"
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./config/grafana_datasources.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - ./config/grafana_dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./dashboards:/opt/grafana/dashboards
+    networks:
+      - back-tier
+      - front-tier
+    restart: always
+
   web:
     build: .
-    image: webapp:2.0.0
+    image: webapp:1.0.0
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
       - "9696:9696"
     environment:
-      RUN_ID: 18d5b4d1abab40229abf8e1e657d7e58
+      RUN_ID: ed82613605f34f34bff58591d9f8739d
       TRACKING_URI: http://host.docker.internal:5000
       EXPERIMENT: online-course-engagement-prediction-experiment-1
       DB_HOST: db

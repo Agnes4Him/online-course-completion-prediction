@@ -156,13 +156,13 @@ def run_pipeline(file_path, train_dataset_output, val_dataset_output, train_outp
         mlflow.sklearn.log_model(pipeline, artifact_path="model")
 
         print('creating new dataframes for monitoring ')
-        df_val_mon['UserId'] = df_val['UserId']
+        df_val_mon['UserID'] = df_val['UserID']
         df_val_mon[categorical] = df_val[categorical]
         df_val_mon[numerical] = df_val[numerical]
         #df_val_mon[target] = df_val[target]
         df_val_mon['prediction'] = val_pred
 
-        df_train_mon['UserId'] = df_train['UserId']
+        df_train_mon['UserID'] = df_train['UserID']
         df_train_mon[categorical] = df_train[categorical]
         df_train_mon[numerical] = df_train[numerical]
         #df_train_mon[target] = df_train[target]

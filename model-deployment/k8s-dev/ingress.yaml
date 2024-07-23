@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: model-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: "model.pred.com"
+    http:
+      paths:
+        - path: "/web"
+          pathType: Prefix
+          backend:
+            service:
+              name: web
+              port:
+                number: 9696
+        - path: "/grafana"
+          pathType: Prefix
+          backend:
+            service:
+              name: grafana
+              port:
+                number: 3000
+        - path: "/adminer"
+          pathType: Prefix
+          backend:
+            service:
+              name: adminer
+              port:
+                number: 8080

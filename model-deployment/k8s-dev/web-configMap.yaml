@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  labels:
+    app: web
+data:
+  RUN_ID: ed82613605f34f34bff58591d9f8739d
+  TRACKING_URI: http://host.docker.internal:5000
+  EXPERIMENT: online-course-engagement-prediction-experiment-1

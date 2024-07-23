@@ -22,3 +22,5 @@ docker build -t mlflow:1.0.0 .
 docker run -d --name mlflow -p 5000:5000 --network back-tier mlflow:1.0.0
 
 docker system prune --volumes -af
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml

@@ -23,6 +23,11 @@ jinja2 = "*"
 [dev-packages]
 requests = "*"
 pytest = "*"
+pylint = "*"
+deepdiff = "*"
+black = "*"
+isort = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.12"

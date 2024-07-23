@@ -10,11 +10,11 @@ from evidently.metrics import ColumnDriftMetric, DatasetDriftMetric, DatasetMiss
 
 from prefect import flow, task
 
-DB_HOST = os.getenv("DB_HOST")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "example")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "course")
 
 create_table_statement = """
 create table if not exists metrics(
@@ -57,17 +57,25 @@ def monitor_data(target, numerical, categorical, reference_data, current_data):
 def get_db_data():
     conn = psycopg.connect('')
 
-    query = 'SELECT * FROM course WHERE timestamp = datetime'
+    query = 'SELECT * FROM course'
 
     cur = conn.cursor()
     cur.execute(query)
 
     data = cur.fetchall()
 
-    columns = ['UserId', 'CourseCategory', 'DeviceType', 'TimeSpentOnCourse', 'NumberOfVideosWatched', 'NumberOfQuizzesTaken']
+    for item in data:
+        del item['timestamp']
+    print(data)
+
+    columns = ['UserID', 'DeviceType', 'CourseCategory', 'TimeSpentOnCourse', 'NumberOfVideosWatched', 'NumberOfQuizzesTaken', 'prediction']
     df = pd.DataFrame(data, columns=columns)
 
     return df
+
+@task
+def prep_db():
+     pass
 
 @task
 def save_metrics(report):
@@ -76,8 +84,9 @@ def save_metrics(report):
     num_drifted_columns = report['metrics'][1]['result']['number_of_drifted_columns']
     share_missing_values = report['metrics'][2]['result']['current']['share_of_missing_values']
 
-    with psycopg.connect(f"host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD}", autocommit=True) as conn:
+    with psycopg.connect("host={} port={} dbname={} user={} password={}".format(DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD), autocommit=True) as conn:
           with conn.cursor() as curr:
+                curr.execute(create_table_statement)
                 curr.execute(
                     "insert into metrics(timestamp, prediction_drift, num_drifted_columns, share_missing_values) values (%s, %s, %s, %s)",
                     (timestamp, prediction_drift, num_drifted_columns, share_missing_values)
@@ -95,5 +104,5 @@ def main(file_path):
 
 
 if __name__ == "__main__":
-    file_path = '../mlpipeline/monitoring_data/online_course_engagement_va_data.pargquet'
+    file_path = '../mlpipeline/monitoring_data/online_course_engagement_va_data.parquet'
     main(file_path)
