@@ -7,6 +7,11 @@ import mlflow
 from flask import Flask, request, jsonify
 
 
+def prepare_data(features):
+    features['TimeSpentOnCourse'] = round(features['TimeSpentOnCourse'], 2)
+
+    return features
+
 #TRACKING_URI = os.getenv('TRACKING_URI', 'http://host.docker.internal:5000') # Used in developemnt(for web service running in local K8S to access local MLFlow server)
 #TRACKING_URI = os.getenv('TRACKING_URI', '<EC2 INSTANCE PUBLIC IP_ADDRESS>:<PORT>') # Used in production(for web service running on Amazon EKS to access reomote MLFlow server)
 TRACKING_URI = os.getenv('TRACKING_URI')
@@ -77,6 +82,8 @@ def ping():
 @app.route('/', methods=['POST'])
 def predict_endpoint():
     features = request.get_json()
+
+    features = prepare_data(features)
 
     pred = predict(features)
 

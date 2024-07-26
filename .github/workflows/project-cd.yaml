@@ -1,0 +1,96 @@
+name: Project-CD
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1"
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      # Define the infrastructure
+      - name: TF plan
+        id: tf-plan
+        working-directory: 'infrastructures'
+        run: |
+          terraform init && terraform plan -var-file=vars/terraform.tfvars
+
+      - name: TF Apply
+        id: tf-apply
+        working-directory: 'infrastructures'
+        if: ${{ steps.tf-plan.outcome }} == 'success'
+        run: |
+          terraform apply -auto-approve -var-file=vars/terraform.tfvars
+          echo "::set-output name=ecr_repo::$(terraform output ecr_repo | xargs)"
+          echo "::set-output name=model_bucket::$(terraform output model_bucket | xargs)" 
+      # Omit the step to provision an S3 bucket for storing models
+
+      # Build-Push
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image-step
+        working-directory: "model-deployment"
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.tf-apply.outputs.ecr_repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image_uri::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      # Deploy
+      - name: Get model artifacts
+        id: get-model-artifacts
+        working-directory: "model-deployment"
+        env:
+          MODEL_BUCKET: ${{ secrets.MODEL_S3_BUCKET }}
+        run: |
+          export RUN_ID=$(aws s3api list-objects-v2 --bucket ${MODEL_BUCKET} \
+          --query 'sort_by(Contents, &LastModified)[-1].Key' --output=text | cut -f2 -d/)
+          echo "::set-output name=run_id::${RUN_ID}"
+
+      - name: Update Kubernetes configMap and deployment manifest files
+        working-directory: "model-deployment"
+        env:
+          IMAGE_URI: ${{ steps.build-image-step.outputs.image_uri }}
+          RUN_ID: ${{ steps.get-model-artifacts.outputs.run_id }}
+        run: |
+          export PASSWORD=$(echo "${}" | base64)
+          sed -i "s/RUN_ID: .*/RUN_ID: $RUN_ID/g" k8s-remote/web-configMap.yaml
+          sed -i "s/image: .*/image: $IMAGE_URI/g" k8s-remote/deployment.yaml
+          sed -i "s/POSTGRES_HOST: .*/POSTGRES_HOST: ${}/g" k8s-remote/postgres-configMap.yaml
+          sed -i "s/POSTGRES_USER: .*/POSTGRES_USER: ${}/g" k8s-remote/postgres-configMap.yaml
+          sed -i "s/password: .*/password: $PASSWORD/g" k8s-remote/secrets.yaml
+
+      - name: Install Kubectl
+        uses: alexellis/arkade-get@23907b6f8cec5667c9a4ef724adea073d677e221
+        with:
+          kubectl: latest
+
+      - name: Update .kubeconfig file
+        working-directory: "model-deployment"
+        run: |
+          aws eks --region us-east-1 update-kubeconfig --name model
+
+      - name: Run kubectl commands to apply K8S manifest files
+        working-directory: "model-deployment"
+        run: |
+          kubectl apply -f k8s-remote
+        

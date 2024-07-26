@@ -1,6 +1,6 @@
-import pandas as pd
+import sys
 
-#import pickle
+import pandas as pd
 
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LinearRegression
@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import make_pipeline
 
 import mlflow
+from mlflow.tracking import MlflowClient
 
 from evidently import ColumnMapping
 from evidently.report import Report
@@ -18,16 +19,14 @@ from prefect import flow, task
 
 
 @task
-def mlflow_setup():
-    TRACKING_URI = "http://127.0.0.1:5000"
-    EXPERIMENT = "online-course-engagement-prediction-experiment-1"
-
-    mlflow.set_tracking_uri(TRACKING_URI)
-    mlflow.set_experiment(EXPERIMENT)
-
-@task
 def read_data(file_path):
     df = pd.read_parquet(file_path)
+
+    return df
+
+@task
+def transform_data(df):
+    df['TimeSpentOnCourse'] = df['TimeSpentOnCourse'].round(2)
 
     return df
 
@@ -43,6 +42,7 @@ def get_val(df):
 
     return df_val
 
+@task
 def write_datasets_to_output(df_train, df_val, train_dataset_output, val_dataset_output):
     df_train.to_parquet(train_dataset_output)
     df_val.to_parquet(val_dataset_output)
@@ -96,17 +96,54 @@ def write_monitoring_data_to_output(df_train_mon, df_val_mon, train_output, val_
     df_train_mon.to_parquet(train_output)
     df_val_mon.to_parquet(val_output)
 
+@task
+def register_model(TRACKING_URI, EXPERIMENT, model_name):
+    client = MlflowClient(tracking_uri=TRACKING_URI)
+
+    experiment_info = client.get_experiment_by_name(
+        name=EXPERIMENT
+    )
+
+    experiment_id = experiment_info.experiment_id
+
+    runs = client.search_runs(
+        experiment_ids=experiment_id
+    )
+
+    run_id = runs[0].info.run_id
+    model_uri = f'runs:/{run_id}/model'
+    model_name = model_name
+
+    mlflow.register_model(model_uri=model_uri, name=model_name)
+    print('model has been registered')
+
+    versions = client.get_latest_versions(name=model_name)
+    version = versions[0].version
+
+    new_stage = "Staging"
+    client.transition_model_version_stage(
+        name=model_name,
+        version=version,
+        stage=new_stage,
+        archive_existing_versions=False
+    )
+
+    print(f'model with run_id {run_id} has been transitioned to {new_stage}')
+
 
 @flow(log_prints=True)
-def run_pipeline(file_path, train_dataset_output, val_dataset_output, train_output, val_output):
+def run_pipeline(file_path, train_dataset_output, val_dataset_output, train_output, val_output, model, TRACKING_URI, EXPERIMENT):
     print('setting up mlflow')
-    mlflow_setup()
+    mlflow.set_tracking_uri(TRACKING_URI)
+    mlflow.set_experiment(EXPERIMENT)
 
     categorical = ['DeviceType', 'CourseCategory']
     numerical = ['TimeSpentOnCourse', 'NumberOfVideosWatched', 'NumberOfQuizzesTaken']
     target = 'CourseCompletion'
 
     df = read_data(file_path)
+
+    df = transform_data(df)
 
     df_train = get_train(df)
     df_val = get_val(df)
@@ -183,6 +220,9 @@ def run_pipeline(file_path, train_dataset_output, val_dataset_output, train_outp
         print(f'saving monitoring datasets to {train_output} and {val_output}')
         write_monitoring_data_to_output(df_train_mon, df_val_mon, train_output, val_output)
 
+    # Registering and transitioning model to Staging
+    register_model(TRACKING_URI, EXPERIMENT, model)
+
 
 if __name__ == "__main__":
     file_path = './data/online_course_engagement_data.parquet'
@@ -190,5 +230,27 @@ if __name__ == "__main__":
     val_dataset_output = './data/online_course_engagement_val_data.parquet'
     train_output = './monitoring_data/online_course_engagement_train_data.parquet'
     val_output = './monitoring_data/online_course_engagement_val_data.parquet'
+    model = 'online-course-model'
+    TRACKING_URI = 'http://127.0.0.1:5000'
+    EXPERIMENT = 'online-course-engagement-prediction-experiment'
 
-    run_pipeline(file_path, train_dataset_output, val_dataset_output, train_output, val_output)
+
+    run_pipeline(file_path,
+                train_dataset_output,
+                val_dataset_output,
+                train_output,
+                val_output,
+                model,
+                TRACKING_URI,
+                EXPERIMENT
+                 )
+
+    # Automated triggering of Prefect Workflow via GitHub...
+    '''flow.from_source(
+        source="https://github.com/Agnes4Him/online-course-completion-prediction.git",
+        entrypoint="mlpipeline/train_model.py:run_pipeline",
+    ).deploy(
+        name="mlpipeline",
+        work_pool_name="mlops",
+        cron="0 0 * * 0",
+    )'''

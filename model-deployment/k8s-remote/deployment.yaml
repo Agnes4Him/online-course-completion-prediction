@@ -1,0 +1,68 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: model-service-account
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      serviceAccountName: model-service-account
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/oidc
+      containers:
+      - name: web
+        image: <IMAGE>
+        ports:
+        - containerPort: 9696
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_HOST
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_USER
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_DB
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: RUN_ID
+          valueFrom:
+            configMapKeyRef:
+              name: web-config
+              key: RUN_ID
+        - name: TRACKING_URI
+          valueFrom:
+            configMapKeyRef:
+              name: web-config
+              key: TRACKING_URI
+        - name: EXPERIMENT
+          valueFrom:
+            configMapKeyRef:
+              name: web-config
+              key: EXPERIMENT      

@@ -13,14 +13,8 @@ CMD ["gunicorn", "predict:app", "-b", "0.0.0.0:9696", "-w", "4"]
 pip install waitress
 waitress-serve --listen=*:9696 predict:app
 
-docker network create front-tier
-
-docker network create back-tier
-
-docker build -t mlflow:1.0.0 .
-
-docker run -d --name mlflow -p 5000:5000 --network back-tier mlflow:1.0.0
-
 docker system prune --volumes -af
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
+
+aws eks --region us-east-1 update-kubeconfig --name model

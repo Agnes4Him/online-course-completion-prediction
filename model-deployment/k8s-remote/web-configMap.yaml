@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  labels:
+    app: web
+data:
+  RUN_ID: <RUN_ID>
+  TRACKING_URI: <REMOTE_INSTANCE_IP>
+  EXPERIMENT: <EXPERIMENT_NAME>
