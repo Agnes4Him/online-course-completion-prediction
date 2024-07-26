@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 
-# Locally, this script should be run as `integration_test.apply.sh``
+# Locally, this script should be run as `integration_test/apply.sh``
 # from `model-deployment`` directory which is has a distinct python environment
 # this directory also contains the docker-compose file needed to start docker containers
-
-if [[ -z "${GITHUB_ACTIONS}" ]]; then
-  cd "$(dirname "$0")"
-fi
 
 if [ "${LOCAL_IMAGE_NAME}" == "" ]; then 
     LOCAL_TAG=`date +"%Y-%m-%d-%H-%M"`
