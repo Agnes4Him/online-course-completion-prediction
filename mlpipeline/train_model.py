@@ -1,9 +1,6 @@
-import sys
-
 import pandas as pd
 
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import make_pipeline

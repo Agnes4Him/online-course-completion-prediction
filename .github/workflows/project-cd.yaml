@@ -71,12 +71,15 @@ jobs:
         env:
           IMAGE_URI: ${{ steps.build-image-step.outputs.image_uri }}
           RUN_ID: ${{ steps.get-model-artifacts.outputs.run_id }}
+          POSTGRES_HOST: ${{ steps.tf-apply.outputs.rds_host }}
+          POSTGRES_USER: ${{ steps.tf-apply.outputs.rds_username }}
+          POSTGRES_PASSWORD: ${{ steps.tf-apply.outputs.rds_password }}
         run: |
-          export PASSWORD=$(echo "${}" | base64)
+          export PASSWORD=$(echo "$POSTGRES_PASSWORD" | base64)
           sed -i "s/RUN_ID: .*/RUN_ID: $RUN_ID/g" k8s-remote/web-configMap.yaml
           sed -i "s/image: .*/image: $IMAGE_URI/g" k8s-remote/deployment.yaml
-          sed -i "s/POSTGRES_HOST: .*/POSTGRES_HOST: ${}/g" k8s-remote/postgres-configMap.yaml
-          sed -i "s/POSTGRES_USER: .*/POSTGRES_USER: ${}/g" k8s-remote/postgres-configMap.yaml
+          sed -i "s/POSTGRES_HOST: .*/POSTGRES_HOST: $PSTGRES_HOST/g" k8s-remote/postgres-configMap.yaml
+          sed -i "s/POSTGRES_USER: .*/POSTGRES_USER: $POSTGRES_USER/g" k8s-remote/postgres-configMap.yaml
           sed -i "s/password: .*/password: $PASSWORD/g" k8s-remote/secrets.yaml
 
       - name: Install Kubectl

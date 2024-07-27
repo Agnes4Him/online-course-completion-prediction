@@ -13,11 +13,6 @@ variable "ecr_repo_name" {
   default = ""
 }
 
-variable "model_bucket" {
-  description = "s3_bucket"
-  default = ""
-}
-
 variable "db_username" {
   description = "DB username"
   default = ""
@@ -38,3 +33,8 @@ variable "vpc_tag" {
   default = "ModelVPC"
 }
 
+variable "node_group_instance_types" {
+  type = list(string)
+  description = "Instance types for node group"
+  default = ["t3.small"]
+}

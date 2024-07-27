@@ -64,26 +64,9 @@ resource "aws_iam_openid_connect_provider" "eks" {
   url             = aws_eks_cluster.demo.identity[0].oidc[0].issuer
 }
 
-data "aws_iam_policy_document" "oidc_assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    effect  = "Allow"
-
-    condition {
-      test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:default:aws-test"]
-    }
-
-    principals {
-      identifiers = [aws_iam_openid_connect_provider.eks.arn]
-      type        = "Federated"
-    }
-  }
-}
-
 resource "aws_iam_role" "oidc" {
-  assume_role_policy = data.aws_iam_policy_document.oidc_assume_role_policy.json
+  assume_role_policy = var.assume_role_policy
+  #assume_role_policy = data.aws_iam_policy_document.oidc_assume_role_policy.json
   name               = "oidc"
 }
 
@@ -126,7 +109,8 @@ data "aws_iam_policy_document" "eks_cluster_autoscaler_assume_role_policy" {
 }
 
 resource "aws_iam_role" "eks_cluster_autoscaler" {
-  assume_role_policy = data.aws_iam_policy_document.eks_cluster_autoscaler_assume_role_policy.json
+  #assume_role_policy = data.aws_iam_policy_document.eks_cluster_autoscaler_assume_role_policy.json
+  assume_role_policy = var.assume_role_policy_autoscaler
   name               = "eks-cluster-autoscaler"
 }
 
