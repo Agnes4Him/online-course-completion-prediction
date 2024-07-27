@@ -153,4 +153,24 @@ NOTE: Everything is running locally at the moment. However, provision has been m
 
 `Model Deployment Phase`
 
+1. The model deployment phase under this section involves using `GitHub Actions` as the CI/CD tool of choice
+2. The configuration files for the CI/CD is located in .github directory, which is present at the root directory
+3. The flow involves ...
+** Create a new git branch
+** Make changes to the content of `infrastructures` or `model-deplyment` directories in the new branch
+** Trigger the `pre-commit hook` when a commit is made (The pre-commit configuration file should ideally be in the root directory containing the .github directory. However, in this case, it's in `model-deployment`, since that's the directory with a pipenv environment and containing the pre-commit package. Hence, this stage of quality check is missed in this project)
+** Push changes to GitHub and make a `pull request` to the main branch
+** This trigger the CI pipeline to run tests and quality check on the repository as well as `terraform plan` command
+** Once this pull request is merged with the main branch, CD would be trigger to run `terraform plan` again, and if successful, to apply any changes in the infrastructure
+** The infrestructures that have been configured in the terraform files include - EKS cluster, ECR, PostgreSQL database
+** The PostgreSQL database is to save the data that would be used for monitoring
+** Visualization, analytics and dashboard creation will be done using `Grafana Cloud` 
+** Simple create an account on `Grafana Cloud` and connect the PostgreSQL as a data source
+** After provisioning the infrastructures, the CD pipeline will build a docker image of the web service and push it to ECR
+** The Kubernetes manifest files will be automatically updated with new values and the files re-applied to the Kubernetes cluster
+
+
 `Monitoring Phase`
+
+1. This involves the same steps as in the local environment
+2. The EC2 instance created earlier for experiment tracking and prefect deployment will also be used to run this workflow.
