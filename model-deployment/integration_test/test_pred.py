@@ -6,7 +6,7 @@ features = {
     "UserID": 6001,
     "CourseCategory": "Science",
     "DeviceType": 1,
-    "TimeSpentOnCourse": 42.23,
+    "TimeSpentOnCourse": 42.238989,
     "NumberOfVideosWatched": 8,
     "NumberOfQuizzesTaken": 7
 }
