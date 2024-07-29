@@ -35,8 +35,9 @@ jobs:
         run: |
           terraform apply -auto-approve -var-file=vars/terraform.tfvars
           echo "::set-output name=ecr_repo::$(terraform output ecr_repo | xargs)"
-          echo "::set-output name=model_bucket::$(terraform output model_bucket | xargs)" 
-      # Omit the step to provision an S3 bucket for storing models
+          echo "::set-output name=rds_host::$(terraform output rds_host | xargs)"
+          echo "::set-output name=rds_username::$(terraform output rds_username | xargs)"
+          echo "::set-output name=rds_password::$(terraform output -raw rds_password | xargs)"
 
       # Build-Push
       - name: Login to Amazon ECR

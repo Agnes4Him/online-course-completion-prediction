@@ -76,7 +76,6 @@ module "rds" {
   subnet_ids = [module.eks.aws_subnet.db_subnetA, module.eks.aws_subnet.db_subnetB] 
   vpc_id = module.eks.aws_vpc.model_vpc.id
   db_username = var.db_username
-  db_password = var.db_password
 }
 
 data "aws_db_instance" "postgres_db" {
@@ -88,11 +87,12 @@ output "rds_host" {
 }
 
 output "rds_username" {
-  value = data.aws_db_instance.postgres_db.master_username
+  value = data.aws_db_instance.postgres_db.username
 }
 
 output "rds_password" {
-  value = data.aws_db_instance.postgres_db.password
+  value     = data.aws_db_instance.postgres_db.password
+  sensitive = true
 }
 
 output "ecr_repo" {

@@ -12,8 +12,3 @@ variable "db_username" {
   description = "DB username"
   default = ""
 }
-
-variable "db_password" {
-  description = "DB password"
-  default = ""
-}

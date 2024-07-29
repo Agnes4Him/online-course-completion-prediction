@@ -1,3 +1,12 @@
+resource "random_password" "db_password" {
+  length           = 16 
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
+  override_special = "!#$%&*()-_=+[]{}<>:?" 
+}
+
 resource "aws_db_instance" "model_db" {
   identifier             = "model_db"
   instance_class         = "db.t3.micro"
@@ -5,7 +14,7 @@ resource "aws_db_instance" "model_db" {
   engine                 = "postgres"
   engine_version         = "14.1"
   username               = var.db_username
-  password               = var.db_password
+  password               = random_password.db_password.result
   db_subnet_group_name   = aws_db_subnet_group.rds_subnets.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   publicly_accessible    = true

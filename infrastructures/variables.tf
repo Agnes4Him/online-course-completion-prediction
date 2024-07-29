@@ -18,11 +18,6 @@ variable "db_username" {
   default = ""
 }
 
-variable "db_password" {
-  description = "DB password"
-  default = ""
-}
-
 variable "vpc_cidr" {
   description = "VPC cidr block"
   default = "10.0.0.0/16"
