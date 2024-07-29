@@ -84,7 +84,7 @@ data "aws_db_instance" "postgres_db" {
 }
 
 output "rds_host" {
-  value = data.aws_db_instance.postgres_db.host
+  value = data.aws_db_instance.postgres_db.address
 }
 
 output "rds_username" {
