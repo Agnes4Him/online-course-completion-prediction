@@ -75,7 +75,7 @@ resource "aws_subnet" "db_subnetA" {
   }
 }
 
-resource "aws_subnet" "db_subnetA" {
+resource "aws_subnet" "db_subnetB" {
   vpc_id                  = aws_vpc.model_vpc.id
   cidr_block              = "10.0.6.0/24"
   availability_zone       = "us-east-1b"
@@ -108,12 +108,10 @@ resource "aws_nat_gateway" "nat_gw" {
 resource "aws_route_table" "private_RT" {
   vpc_id = aws_vpc.model_vpc.id
 
-  route = [
-    {
-      cidr_block                 = "0.0.0.0/0"
-      nat_gateway_id             = aws_nat_gateway.nat_gw.id
-    },
-  ]
+  route {
+    cidr_block                 = "0.0.0.0/0"
+    nat_gateway_id             = aws_nat_gateway.nat_gw.id
+  }
 
   tags = {
     Name = "PrivateRT"
@@ -123,12 +121,10 @@ resource "aws_route_table" "private_RT" {
 resource "aws_route_table" "public_RT" {
   vpc_id = aws_vpc.model_vpc.id
 
-  route = [
-    {
-      cidr_block                 = "0.0.0.0/0"
-      gateway_id                 = aws_internet_gateway.igw.id
-    },
-  ]
+  route {
+    cidr_block                 = "0.0.0.0/0"
+    gateway_id                 = aws_internet_gateway.igw.id
+  }
 
   tags = {
     Name = "PublicRT"
@@ -155,3 +151,14 @@ resource "aws_route_table_association" "public_RT_associationB" {
   route_table_id = aws_route_table.public_RT.id
 }
 
+output "vpc_id" {
+  value = aws_vpc.model_vpc.id
+}
+
+output "db_subnetA" {
+  value = aws_subnet.db_subnetA.id
+}
+
+output "db_subnetB" {
+  value = aws_subnet.db_subnetB.id
+}

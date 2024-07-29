@@ -8,7 +8,7 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_db_instance" "model_db" {
-  identifier             = "model_db"
+  identifier             = "model-db"
   instance_class         = "db.t3.micro"
   allocated_storage      = 5
   engine                 = "postgres"
@@ -19,4 +19,17 @@ resource "aws_db_instance" "model_db" {
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   publicly_accessible    = true
   skip_final_snapshot    = true
+  depends_on = [random_password.db_password]
+}
+
+output "rds_host" {
+  value = aws_db_instance.model_db.address
+}
+
+output "rds_username" {
+  value = aws_db_instance.model_db.username
+}
+
+output "rds_password" {
+  value = aws_db_instance.model_db.password
 }
