@@ -1,6 +1,7 @@
 name: Project-CD
 on:
-  push:
+  #push:  # Making this inactive for now to avoid triggering repeated CD pipelines while the project is still in progress...
+  pull_request:
     branches:
       - 'main'
 jobs:
