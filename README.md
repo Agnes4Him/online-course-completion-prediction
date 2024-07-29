@@ -7,7 +7,7 @@ Online course completion prediction
 Online learning platforms have revolutionized education by making a wide range of courses accessible to people worldwide. However, a significant challenge these platforms face is the high dropout rate of students. Understanding and predicting which students are likely to complete a course can help educators and administrators design better intervention strategies, personalize learning experiences, and ultimately improve student retention and success rates.
 
 2. Objective
-The objective of this project is to develop and deploy a machine learning model that predicts whether a student will complete an online course. By accurately predicting course completion, the model can assist online learning platforms in identifying at-risk students early and implementing measures to support them throughout their learning journey.
+The objective of this project is to `train` and `deploy` a machine learning model that predicts whether a student will complete an online course. By accurately predicting course completion, the model can assist online learning platforms in identifying at-risk students early and implement measures to support them throughout their learning journey.
 
 3. Data Source
 The data for this project was sourced from kaggle.com, and includes the following:
@@ -78,6 +78,8 @@ NOTE: Everything is running locally at the moment. However, provision has been m
 ** `Kubernnetes` for orchestrating the container deployment
 ** `Postgres` for storing monitoring data
 ** `Grafana` for visualization, observability and alerting
+** `Terraform` as Infrastructure as Code tool
+** `GitHub Actions` for CI/CD pipeline
 
 `To run things locally`...
 
